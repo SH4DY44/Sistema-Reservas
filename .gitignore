@@ -1,0 +1,54 @@
+# Node
+node_modules/
+
+# Frontend node_modules
+/frontend/node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Production build outputs
+dist/
+build/
+/frontend/dist/
+/frontend/build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Editor directories and files
+.vscode/
+.idea/
+.DS_Store
+
+# System files
+Thumbs.db
+
+# OS files
+npm-debug.log
+
+# Optional: local runtime files
+.pnpm-store/
+
+# Ignore coverage and test output
+coverage/
+
+# Ignore generated local database files
+*.sqlite
+
+# Lockfiles (you can keep them if you prefer to track)
+# package-lock.json
+# pnpm-lock.yaml
+
+# Mac, Linux temporary
+*~
+
+# Misc
+frontend/.env
+
+# Keep any sensitive files out of the repo
+secrets/
