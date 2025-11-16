@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader, Save } from 'lucide-react';
 import FormLayout from './FormLayout';
 
 export default function EditRecurso() {
   const { id } = useParams();
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [capacidad, setCapacidad] = useState(1); // NUEVO
+  const [ubicacion, setUbicacion] = useState(''); // NUEVO
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,15 +20,19 @@ export default function EditRecurso() {
       try {
         const res = await fetch(`http://localhost:3000/recursos/${id}`);
         const data = await res.json();
-        if (data.data) {
-          setNombre(data.data.nombre || '');
-          setDescripcion(data.data.descripcion || '');
-        } else if (data.nombre) {
-          setNombre(data.nombre);
-          setDescripcion(data.descripcion);
+        const recurso = data.data || data;
+
+        if (recurso && recurso.id) {
+          setNombre(recurso.nombre || '');
+          setDescripcion(recurso.descripcion || '');
+          setCapacidad(recurso.capacidad || 1); // Cargar capacidad
+          setUbicacion(recurso.ubicacion || ''); // Cargar ubicación
+        } else {
+           setMensaje('Recurso no encontrado.');
+           setTipoMensaje('error');
         }
       } catch {
-        setMensaje('Error al cargar datos');
+        setMensaje('Error al cargar datos del recurso');
         setTipoMensaje('error');
       } finally {
         setLoadingInit(false);
@@ -42,10 +48,16 @@ export default function EditRecurso() {
     setLoading(true);
 
     try {
+      // Usamos PATCH para enviar solo los campos modificados
       const res = await fetch(`http://localhost:3000/recursos/${id}`, {
-        method: 'PUT',
+        method: 'PATCH', // Usamos PATCH para actualización parcial
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, descripcion })
+        body: JSON.stringify({ 
+          nombre, 
+          descripcion, 
+          capacidad: parseInt(capacidad), // Enviar capacidad
+          ubicacion // Enviar ubicación
+        })
       });
       const data = await res.json();
 
@@ -89,7 +101,35 @@ export default function EditRecurso() {
             className="form-input"
           />
         </div>
-
+        
+        {/* Capacidad */}
+        <div>
+          <label htmlFor="capacidad" className="block text-gray-700 font-semibold mb-2">Capacidad</label>
+          <input
+            type="number"
+            id="capacidad"
+            placeholder="Máximo de personas"
+            value={capacidad}
+            onChange={e => setCapacidad(e.target.value)}
+            required
+            min="1"
+            className="form-input"
+          />
+        </div>
+        
+        {/* Ubicación */}
+        <div>
+          <label htmlFor="ubicacion" className="block text-gray-700 font-semibold mb-2">Ubicación</label>
+          <input
+            type="text"
+            id="ubicacion"
+            placeholder="Ej: Piso 3, Ala Norte"
+            value={ubicacion}
+            onChange={e => setUbicacion(e.target.value)}
+            className="form-input"
+          />
+        </div>
+        
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Descripción</label>
           <textarea
@@ -129,7 +169,10 @@ export default function EditRecurso() {
               Guardando...
             </>
           ) : (
-            'Guardar Cambios'
+            <>
+              <Save size={20} />
+              Guardar Cambios
+            </>
           )}
         </button>
       </form>

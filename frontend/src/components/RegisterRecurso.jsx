@@ -6,7 +6,8 @@ import FormLayout from './FormLayout';
 export default function RegisterRecurso() {
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
-  //const [cantidadDisponible, setCantidadDisponible] = useState('1');
+  const [capacidad, setCapacidad] = useState(1); // Estado para Capacidad (valor inicial 1)
+  const [ubicacion, setUbicacion] = useState(''); // Estado para Ubicación
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,8 @@ export default function RegisterRecurso() {
         body: JSON.stringify({
           nombre,
           descripcion,
-          //cantidad_disponible: parseInt(cantidadDisponible)
+          capacidad: parseInt(capacidad), // Aseguramos que se envía como número entero
+          ubicacion // Incluimos la ubicación
         })
       });
       const data = await res.json();
@@ -32,9 +34,13 @@ export default function RegisterRecurso() {
       if (res.ok) {
         setMensaje('Recurso registrado con éxito. Redirigiendo...');
         setTipoMensaje('success');
+        
+        // Limpiar estados después del éxito
         setNombre('');
         setDescripcion('');
-        //setCantidadDisponible('1');
+        setCapacidad(1); // Limpiamos el nuevo estado
+        setUbicacion(''); // Limpiamos el nuevo estado
+        
         setTimeout(() => navigate('/recursos'), 1500);
       } else {
         setMensaje(data.message || 'Error al registrar recurso');
@@ -51,6 +57,7 @@ export default function RegisterRecurso() {
   return (
     <FormLayout title="Registrar Recurso" backLink="/recursos">
       <form onSubmit={handleSubmit} className="space-y-4">
+        
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Nombre del Recurso</label>
           <input
@@ -59,6 +66,34 @@ export default function RegisterRecurso() {
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             required
+            className="form-input"
+          />
+        </div>
+
+        {/* Capacidad */}
+        <div>
+          <label htmlFor="capacidad" className="block text-gray-700 font-semibold mb-2">Capacidad (Núm. de personas)</label>
+          <input
+            type="number"
+            id="capacidad"
+            placeholder="Máximo de personas"
+            value={capacidad}
+            onChange={e => setCapacidad(e.target.value)}
+            required
+            min="1"
+            className="form-input"
+          />
+        </div>
+        
+        {/* Ubicación */}
+        <div>
+          <label htmlFor="ubicacion" className="block text-gray-700 font-semibold mb-2">Ubicación</label>
+          <input
+            type="text"
+            id="ubicacion"
+            placeholder="Ej: Piso 3, Edificio Central"
+            value={ubicacion}
+            onChange={e => setUbicacion(e.target.value)}
             className="form-input"
           />
         </div>

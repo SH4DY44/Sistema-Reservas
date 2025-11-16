@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Edit, Plus, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { Trash2, Edit, Plus, AlertCircle, CheckCircle, Lock, Users, MapPin } from 'lucide-react'; // Agregamos Users y MapPin
 import { useAuth } from '../contexts/AuthContext';
 
 export default function ListRecursos() {
@@ -31,8 +31,12 @@ export default function ListRecursos() {
   }, []);
 
   const handleDelete = async (id, nombre) => {
-    if (!window.confirm(`¿Seguro que deseas eliminar ${nombre}?`)) return;
+    // Usar modal en lugar de window.confirm
+    // if (!window.confirm(`¿Seguro que deseas eliminar ${nombre}?`)) return; 
     
+    // NOTA: Para producción, este confirm debe ser reemplazado por un modal de React
+    if (!confirm(`¿Seguro que deseas eliminar ${nombre}?`)) return; 
+
     try {
       const res = await fetch(`http://localhost:3000/recursos/${id}`, { method: 'DELETE' });
       if (res.ok) {
@@ -59,8 +63,8 @@ export default function ListRecursos() {
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Recursos</h1>
-          <p className="text-gray-600 mt-1">Gestiona la lista de recursos disponibles</p>
+          <h1 className="text-3xl font-bold text-gray-900">Recursos Empresariales</h1>
+          <p className="text-gray-600 mt-1">Salas y equipos disponibles para reserva.</p>
         </div>
         {usuario && (
           <button
@@ -119,7 +123,8 @@ export default function ListRecursos() {
               <tr>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Nombre</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Descripción</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Disponibles</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Capacidad</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Ubicación</th> 
                 {usuario && <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">Acciones</th>}
               </tr>
             </thead>
@@ -127,12 +132,24 @@ export default function ListRecursos() {
               {recursos.map((r) => (
                 <tr key={r.id} className="hover:bg-gray-50 transition">
                   <td className="px-6 py-4 text-sm text-gray-900 font-medium">{r.nombre}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{r.descripcion || '-'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">{r.descripcion || '-'}</td>
+                  
+                  {/* Capacidad */}
                   <td className="px-6 py-4 text-sm">
-                    <span className="inline-flex items-center justify-center w-8 h-8 bg-blue-100 text-blue-700 rounded-full font-semibold text-xs">
-                      {r.cantidad_disponible}
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-semibold">
+                      <Users size={14} />
+                      {r.capacidad || 1}
                     </span>
                   </td>
+                  
+                  {/* Ubicación */}
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    <span className="flex items-center gap-1.5">
+                        <MapPin size={14} className="text-gray-400" />
+                        {r.ubicacion || 'N/A'}
+                    </span>
+                  </td>
+
                   {usuario && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">

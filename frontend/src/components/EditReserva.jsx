@@ -3,6 +3,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircle, CheckCircle, Loader, Save } from 'lucide-react';
 import FormLayout from './FormLayout';
 
+// Función auxiliar para convertir TIMESTAMP de la DB a formato 'YYYY-MM-DDTHH:mm'
+// Necesario para que el input type="datetime-local" lo muestre correctamente.
+const formatForInput = (dbTimestamp) => {
+  if (!dbTimestamp) return '';
+  const date = new Date(dbTimestamp);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+};
+
+
 export default function EditReserva() {
   const { id } = useParams();
   const [usuarios, setUsuarios] = useState([]);
@@ -11,6 +21,7 @@ export default function EditReserva() {
   const [recursoId, setRecursoId] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const [motivo, setMotivo] = useState(''); 
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,14 +39,19 @@ export default function EditReserva() {
         setRecursos(dataR.data || dataR);
 
         const res = dataRes.data || dataRes;
-        setUsuarioId(res.usuario_id || '');
-        setRecursoId(res.recurso_id || '');
-        setFechaInicio(res.fecha_inicio || '');
-        setFechaFin(res.fecha_fin || '');
+        
+        if (res && res.id) {
+          setUsuarioId(res.usuario_id || '');
+          setRecursoId(res.recurso_id || '');
+          // Convertir para mostrar en el input
+          setFechaInicio(formatForInput(res.fecha_inicio)); 
+          setFechaFin(formatForInput(res.fecha_fin));
+          setMotivo(res.motivo || ''); // Cargar motivo
+        }
         setCargando(false);
       })
       .catch(err => {
-        setMensaje('Error al cargar datos');
+        setMensaje('Error al cargar datos de la reserva');
         setTipoMensaje('error');
         setCargando(false);
       });
@@ -46,15 +62,33 @@ export default function EditReserva() {
     setMensaje('');
     setLoading(true);
 
+    // Convertimos las fechas locales a UTC (ISO 8601) antes de enviar
+    const isoFechaInicio = new Date(fechaInicio).toISOString();
+    const isoFechaFin = new Date(fechaFin).toISOString();
+    
+    if (isoFechaInicio === 'Invalid Date' || isoFechaFin === 'Invalid Date') {
+      setMensaje('Formato de fecha u hora inválido.');
+      setTipoMensaje('error');
+      setLoading(false);
+      return;
+    }
+    if (!motivo.trim()) {
+        setMensaje('El motivo de la reserva es obligatorio.');
+        setTipoMensaje('error');
+        setLoading(false);
+        return;
+    }
+
     try {
       const res = await fetch(`http://localhost:3000/reservas/${id}`, {
-        method: 'PUT',
+        method: 'PUT', // Manteniendo PUT, aunque PATCH también funcionaría
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           usuario_id: parseInt(usuarioId),
           recurso_id: parseInt(recursoId),
-          fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin
+          fecha_inicio: isoFechaInicio,
+          fecha_fin: isoFechaFin,
+          motivo: motivo 
         })
       });
       const data = await res.json();
@@ -116,14 +150,15 @@ export default function EditReserva() {
             <option value="">Selecciona recurso</option>
             {recursos.map(r => (
               <option key={r.id} value={r.id}>
-                {r.nombre}
+                {r.nombre} ({r.ubicacion} - Cap: {r.capacidad})
               </option>
             ))}
           </select>
         </div>
 
+        {/* Campo Fecha de Inicio (Manejo de formato) */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Fecha de Inicio</label>
+          <label className="block text-gray-700 font-semibold mb-2">Fecha y Hora de Inicio</label>
           <input
             type="datetime-local"
             value={fechaInicio}
@@ -133,12 +168,26 @@ export default function EditReserva() {
           />
         </div>
 
+        {/* Campo Fecha de Fin (Manejo de formato) */}
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Fecha de Fin</label>
+          <label className="block text-gray-700 font-semibold mb-2">Fecha y Hora de Fin</label>
           <input
             type="datetime-local"
             value={fechaFin}
             onChange={e => setFechaFin(e.target.value)}
+            required
+            className="form-input"
+          />
+        </div>
+        
+        {/* Motivo */}
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">Motivo de la Reserva</label>
+          <input
+            type="text"
+            placeholder="Ej: Reunión de planeación Q3"
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
             required
             className="form-input"
           />

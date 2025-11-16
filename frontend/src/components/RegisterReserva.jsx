@@ -10,6 +10,7 @@ export default function RegisterReserva() {
   const [recursoId, setRecursoId] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
+  const [motivo, setMotivo] = useState(''); // NUEVO: Estado para el motivo
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,7 +23,8 @@ export default function RegisterReserva() {
       fetch('http://localhost:3000/recursos').then(res => res.json())
     ])
       .then(([dataU, dataR]) => {
-        setUsuarios(dataU.data || dataU);
+        // Asegúrate de acceder a 'data' si las respuestas están anidadas
+        setUsuarios(dataU.data || dataU); 
         setRecursos(dataR.data || dataR);
         setCargandoOpciones(false);
       })
@@ -38,6 +40,25 @@ export default function RegisterReserva() {
     setMensaje('');
     setLoading(true);
 
+    // CONVERSIÓN CRÍTICA: Convertimos las fechas locales a UTC (ISO 8601)
+    // Esto asegura que el Backend (PostgreSQL) maneje correctamente la zona horaria y evite conflictos.
+    const isoFechaInicio = new Date(fechaInicio).toISOString();
+    const isoFechaFin = new Date(fechaFin).toISOString();
+    
+    // Verificación de formato y motivo
+    if (isoFechaInicio === 'Invalid Date' || isoFechaFin === 'Invalid Date') {
+      setMensaje('Formato de fecha u hora inválido.');
+      setTipoMensaje('error');
+      setLoading(false);
+      return;
+    }
+    if (!motivo.trim()) {
+        setMensaje('El motivo de la reserva es obligatorio.');
+        setTipoMensaje('error');
+        setLoading(false);
+        return;
+    }
+
     try {
       const res = await fetch('http://localhost:3000/reservas', {
         method: 'POST',
@@ -45,8 +66,9 @@ export default function RegisterReserva() {
         body: JSON.stringify({
           usuario_id: parseInt(usuarioId),
           recurso_id: parseInt(recursoId),
-          fecha_inicio: fechaInicio,
-          fecha_fin: fechaFin
+          fecha_inicio: isoFechaInicio, // Enviar fecha inicio convertida
+          fecha_fin: isoFechaFin,       // Enviar fecha fin convertida
+          motivo: motivo                // Incluir el motivo
         })
       });
       const data = await res.json();
@@ -54,10 +76,14 @@ export default function RegisterReserva() {
       if (res.ok) {
         setMensaje('Reserva registrada con éxito');
         setTipoMensaje('success');
+        
+        // Limpiar estados
         setUsuarioId('');
         setRecursoId('');
         setFechaInicio('');
         setFechaFin('');
+        setMotivo(''); // Limpiamos el motivo
+        
         setTimeout(() => navigate('/reservas'), 1500);
       } else {
         setMensaje(data.message || 'Error al registrar reserva');
@@ -74,6 +100,7 @@ export default function RegisterReserva() {
   return (
     <FormLayout title="Crear Reserva" backLink="/reservas">
       <form onSubmit={handleSubmit} className="space-y-4">
+        
         <div>
           <label className="block text-gray-700 font-semibold mb-2">Usuario</label>
           <select
@@ -104,14 +131,14 @@ export default function RegisterReserva() {
             <option value="">{cargandoOpciones ? 'Cargando...' : 'Selecciona recurso'}</option>
             {recursos.map(r => (
               <option key={r.id} value={r.id}>
-                {r.nombre}
+                {r.nombre} ({r.ubicacion} - Cap: {r.capacidad}) 
               </option>
             ))}
           </select>
         </div>
 
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Fecha de Inicio</label>
+          <label className="block text-gray-700 font-semibold mb-2">Fecha y Hora de Inicio</label>
           <input
             type="datetime-local"
             value={fechaInicio}
@@ -122,11 +149,24 @@ export default function RegisterReserva() {
         </div>
 
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Fecha de Fin</label>
+          <label className="block text-gray-700 font-semibold mb-2">Fecha y Hora de Fin</label>
           <input
             type="datetime-local"
             value={fechaFin}
             onChange={e => setFechaFin(e.target.value)}
+            required
+            className="form-input"
+          />
+        </div>
+
+        {/* Motivo de la Reserva */}
+        <div>
+          <label className="block text-gray-700 font-semibold mb-2">Motivo de la Reserva</label>
+          <input
+            type="text"
+            placeholder="Ej: Reunión semanal de equipo"
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
             required
             className="form-input"
           />

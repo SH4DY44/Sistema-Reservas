@@ -17,17 +17,19 @@ const isNotEmpty = (value) => {
 };
 
 const isValidDate = (date) => {
+  // Verifica si la fecha es válida
   return date && !isNaN(new Date(date).getTime());
 };
 
 const isValidDateRange = (startDate, endDate) => {
   const start = new Date(startDate);
   const end = new Date(endDate);
+  // La fecha de fin debe ser estrictamente posterior a la de inicio
   return start < end;
 };
 
 const isPositiveNumber = (num) => {
-  return num && Number(num) > 0;
+  return num !== undefined && Number(num) > 0;
 };
 
 module.exports = {

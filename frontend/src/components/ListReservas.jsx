@@ -31,7 +31,8 @@ export default function ListReservas() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta reserva?')) return;
+    // NOTA: Para producción, este confirm debe ser reemplazado por un modal de React
+    if (!confirm('¿Seguro que deseas eliminar esta reserva?')) return; 
     
     try {
       const res = await fetch(`http://localhost:3000/reservas/${id}`, { method: 'DELETE' });
@@ -55,6 +56,7 @@ export default function ListReservas() {
   };
 
   const formatDate = (dateString) => {
+    // Usamos el formato completo para el enfoque empresarial
     return new Date(dateString).toLocaleDateString('es-ES', {
       year: 'numeric',
       month: 'short',
@@ -63,14 +65,26 @@ export default function ListReservas() {
       minute: '2-digit'
     });
   };
+  
+  // Función para determinar el estilo del estado
+  const getStatusStyle = (status) => {
+    switch(status) {
+      case 'cancelada':
+        return 'bg-red-100 text-red-700';
+      case 'confirmada':
+        return 'bg-green-100 text-green-700';
+      default:
+        return 'bg-gray-100 text-gray-700';
+    }
+  }
 
   return (
     <div className="w-full">
       {/* Header */}
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-          <p className="text-gray-600 mt-1">Gestiona todas las reservas del sistema</p>
+          <h1 className="text-3xl font-bold text-gray-900">Reservas Empresariales</h1>
+          <p className="text-gray-600 mt-1">Control de horarios, recursos y motivos.</p>
         </div>
         {usuario && (
           <button
@@ -127,20 +141,35 @@ export default function ListReservas() {
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Usuario</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Motivo</th>
                 <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Recurso</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fecha Inicio</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fecha Fin</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Usuario</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Inicio</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fin</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Estado</th>
                 {usuario && <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">Acciones</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {reservas.map((res) => (
                 <tr key={res.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{res.usuario_nombre || 'N/A'}</td>
+                  {/* Motivo (Primero) */}
+                  <td className="px-6 py-4 text-sm text-gray-900 font-medium max-w-[150px] truncate">{res.motivo || 'N/A'}</td>
+                  
                   <td className="px-6 py-4 text-sm text-gray-600">{res.recurso_nombre || 'N/A'}</td>
+                  <td className="px-6 py-4 text-sm text-gray-600">{res.usuario_nombre || 'N/A'}</td>
+                  
+                  {/* Columna de Fecha y Hora */}
                   <td className="px-6 py-4 text-sm text-gray-600">{formatDate(res.fecha_inicio)}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{formatDate(res.fecha_fin)}</td>
+
+                  {/*Estado */}
+                  <td className="px-6 py-4 text-sm">
+                    <span className={`px-3 py-1 text-xs font-semibold rounded-full capitalize ${getStatusStyle(res.estado)}`}>
+                      {res.estado || 'pendiente'}
+                    </span>
+                  </td>
+
                   {usuario && (
                     <td className="px-6 py-4 text-right">
                       <div className="flex justify-end gap-2">
