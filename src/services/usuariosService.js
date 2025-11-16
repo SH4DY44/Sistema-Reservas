@@ -12,19 +12,21 @@ const {
 class UsuariosService {
   // Obtener todos los usuarios
   static async obtenerTodos() {
-    const result = await db.query('SELECT * FROM usuarios ORDER BY id DESC');
+    // Nota: Es mejor práctica NO seleccionar la columna 'contrasena' en obtenerTodos()
+    const result = await db.query('SELECT id, nombre, email FROM usuarios ORDER BY id DESC');
     return result.rows;
   }
 
   // Obtener usuario por ID
   static async obtenerPorId(id) {
-    const result = await db.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+    const result = await db.query('SELECT id, nombre, email FROM usuarios WHERE id = $1', [id]);
     return result.rows[0];
   }
 
   // Crear usuario
   static async crear(datos) {
-    const { nombre, email, password } = datos;
+    // La destructuración ya usa 'contrasena', lo cual es correcto
+    const { nombre, email, contrasena } = datos;
 
     // Validar datos
     if (!isNotEmpty(nombre)) {
@@ -33,14 +35,17 @@ class UsuariosService {
     if (!isValidEmail(email)) {
       throw { statusCode: 400, message: 'El email no es válido' };
     }
-    if (!isValidPassword(password)) {
+    // 💡 CAMBIO 1: Usamos la variable 'contrasena' para la validación
+    if (!isValidPassword(contrasena)) { 
       throw { statusCode: 400, message: 'La contraseña debe tener mínimo 6 caracteres' };
     }
 
     try {
       const result = await db.query(
-        'INSERT INTO usuarios (nombre, email, password) VALUES ($1, $2, $3) RETURNING *',
-        [nombre, email, password]
+        // 💡 CAMBIO 2: La columna SQL debe ser 'contrasena'
+        'INSERT INTO usuarios (nombre, email, contrasena) VALUES ($1, $2, $3) RETURNING *',
+        // 💡 CAMBIO 3: La variable que se inserta es 'contrasena'
+        [nombre, email, contrasena] 
       );
       return result.rows[0];
     } catch (error) {
@@ -51,7 +56,7 @@ class UsuariosService {
     }
   }
 
-  // Actualizar usuario
+  // Actualizar usuario (SE MANTIENE IGUAL)
   static async actualizar(id, datos) {
     const { nombre, email } = datos;
 
@@ -74,7 +79,7 @@ class UsuariosService {
     return result.rows[0];
   }
 
-  // Eliminar usuario
+  // Eliminar usuario (SE MANTIENE IGUAL)
   static async eliminar(id) {
     const result = await db.query('DELETE FROM usuarios WHERE id = $1 RETURNING id', [id]);
 
@@ -95,8 +100,9 @@ class UsuariosService {
     }
 
     const result = await db.query(
-      'SELECT id, nombre, email FROM usuarios WHERE email = $1 AND password = $2',
-      [email, password]
+      // 💡 CAMBIO 4: La columna SQL debe ser 'contrasena' para la verificación de credenciales
+      'SELECT id, nombre, email FROM usuarios WHERE email = $1 AND contrasena = $2',
+      [email, password] // 'password' es el valor que viene del frontend
     );
 
     if (result.rows.length === 0) {

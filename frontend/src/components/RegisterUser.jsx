@@ -16,26 +16,32 @@ export default function RegisterUser() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMensaje('');
+
+    const cleanPassword = password.trim(); 
     
     // Validar passwords
-    if (password !== confirmPassword) {
+    if (cleanPassword !== confirmPassword.trim()) { 
       setMensaje('Las contraseñas no coinciden');
       setTipoMensaje('error');
       return;
     }
     
-    if (password.length < 6) {
+    if (cleanPassword.length < 6) {
       setMensaje('La contraseña debe tener mínimo 6 caracteres');
       setTipoMensaje('error');
       return;
     }
-
+    
     setLoading(true);
     try {
       const res = await fetch('http://localhost:3000/usuarios', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, email, password })
+        body: JSON.stringify({ 
+          nombre, 
+          email, 
+          contrasena: cleanPassword // 💡 Usamos la contraseña limpia y validada
+        })
       });
       const data = await res.json();
       
@@ -48,6 +54,7 @@ export default function RegisterUser() {
         setConfirmPassword('');
         setTimeout(() => navigate('/login'), 1500);
       } else {
+        // El Backend devuelve un error (ej: email ya registrado)
         setMensaje(data.message || 'Error al registrar usuario');
         setTipoMensaje('error');
       }

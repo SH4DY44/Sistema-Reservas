@@ -53,7 +53,7 @@ exports.createReserva = async (req, res, next) => {
   }
 };
 
-eexports.updateReserva = async (req, res, next) => {
+exports.updateReserva = async (req, res, next) => {
   try {
     const { id } = req.params;
     // El body debe incluir los nuevos campos: fecha_inicio, fecha_fin, estado, motivo
