@@ -53,12 +53,18 @@ exports.createReserva = async (req, res, next) => {
   }
 };
 
-exports.updateReserva = async (req, res, next) => {
+eexports.updateReserva = async (req, res, next) => {
   try {
-    const reserva = await ReservasService.actualizar(req.params.id, req.body);
-    sendSuccess(res, reserva, 'Reserva actualizada exitosamente');
+    const { id } = req.params;
+    // El body debe incluir los nuevos campos: fecha_inicio, fecha_fin, estado, motivo
+    const datos = req.body; 
+    
+    // El servicio actualizará solo los campos presentes en 'datos' (gracias a COALESCE en el servicio)
+    const reservaActualizada = await reservasService.actualizar(id, datos);
+    
+    res.json({ success: true, data: reservaActualizada });
   } catch (error) {
-    next(error);
+    next(error); // Pasa el error al errorHandler
   }
 };
 

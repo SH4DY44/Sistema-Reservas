@@ -19,6 +19,7 @@ router.post('/', reservasController.createReserva);
 
 // Actualizar reserva
 router.put('/:id', reservasController.updateReserva);
+router.patch('/:id', reservasController.updateReserva); // Usaremos el mismo controller
 
 // Cancelar reserva
 router.post('/:id/cancelar', reservasController.cancelarReserva);
