@@ -1,4 +1,5 @@
 
+// Este es el comentario de prueba para verificar que se puedan hacer cambios en el repositorio.
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
