@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AlertCircle, CheckCircle, Loader, LogIn } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import AuthService from '../services/authService';
 import FormLayout from './FormLayout';
 
 export default function LoginUser() {
@@ -19,26 +20,21 @@ export default function LoginUser() {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:3000/usuarios/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      const data = await res.json();
+      const response = await AuthService.login(email, password);
 
-      if (res.ok && data.data) {
+      if (response.success && response.data) {
         setMensaje('Inicio de sesión exitoso. Redirigiendo...');
         setTipoMensaje('success');
-        login(data.data);
+        login(response.data); // data.data contains the user info
         setEmail('');
         setPassword('');
         setTimeout(() => navigate('/'), 1500);
       } else {
-        setMensaje(data.message || 'Credenciales incorrectas');
+        setMensaje(response.message || 'Credenciales incorrectas');
         setTipoMensaje('error');
       }
-    } catch {
-      setMensaje('Error de conexión con el servidor');
+    } catch (error) {
+      setMensaje(error.message || 'Error de conexión con el servidor');
       setTipoMensaje('error');
     } finally {
       setLoading(false);
@@ -75,8 +71,8 @@ export default function LoginUser() {
         {mensaje && (
           <div
             className={`flex items-center gap-3 p-4 rounded-lg text-sm border ${tipoMensaje === 'success'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
               }`}
           >
             {tipoMensaje === 'success' ? (

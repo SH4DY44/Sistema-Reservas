@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { AlertCircle, CheckCircle, Loader, UserPlus, ShieldAlert } from 'lucide-react';
+import AuthService from '../services/authService';
 import FormLayout from './FormLayout';
 
 export default function RegisterUser() {
@@ -33,14 +34,9 @@ export default function RegisterUser() {
 
     setLoading(true);
     try {
-      const res = await fetch('http://localhost:3000/usuarios', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, email, password, adminCode })
-      });
-      const data = await res.json();
+      const response = await AuthService.register({ nombre, email, password, adminCode });
 
-      if (res.ok) {
+      if (response.success) {
         setMensaje('Usuario registrado con éxito. Redirigiendo...');
         setTipoMensaje('success');
         setNombre('');
@@ -50,11 +46,11 @@ export default function RegisterUser() {
         setAdminCode('');
         setTimeout(() => navigate('/login'), 1500);
       } else {
-        setMensaje(data.message || 'Error al registrar usuario');
+        setMensaje(response.message || 'Error al registrar usuario');
         setTipoMensaje('error');
       }
     } catch (err) {
-      setMensaje('Error de conexión con el servidor');
+      setMensaje(err.message || 'Error de conexión con el servidor');
       setTipoMensaje('error');
     } finally {
       setLoading(false);
@@ -134,8 +130,8 @@ export default function RegisterUser() {
         {mensaje && (
           <div
             className={`flex items-center gap-3 p-4 rounded-lg text-sm border ${tipoMensaje === 'success'
-                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
               }`}
           >
             {tipoMensaje === 'success' ? (
