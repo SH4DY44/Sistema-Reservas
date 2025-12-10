@@ -7,6 +7,10 @@ const config = require('./config/environment');
 const errorHandler = require('./middleware/errorHandler');
 
 // Importar rutas
+const requestLogger = require('./middleware/requestLogger');
+const validateRequiredFields = require('./middleware/validator');
+
+// Importar rutas
 const usuariosRouter = require('./routes/usuarios');
 const recursosRouter = require('./routes/recursos');
 const reservasRouter = require('./routes/reservas');
@@ -18,10 +22,14 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Logging de solicitudes
+// [TEMA 2: MIDDLEWARE] Auditoría de solicitudes
+// Aplicamos el logger globalmente para tener trazabilidad de TODAS las interacciones
+app.use(requestLogger);
+
+// Logging de solicitudes (Legacy dev logging - mantenemos por compatibilidad pero requestLogger es superior)
 if (config.server.nodeEnv === 'development') {
   app.use((req, res, next) => {
-    console.log(`${req.method} ${req.path}`);
+    // console.log(`${req.method} ${req.path}`); // Comentado para no duplicar logs con requestLogger
     next();
   });
 }
@@ -32,6 +40,13 @@ app.get('/health', (req, res) => {
 });
 
 // Rutas API
+// [TEMA 2: MIDDLEWARE] Validación en rutas
+// Podemos interceptar rutas específicas para validar datos antes del controlador
+app.post('/usuarios/login', validateRequiredFields(['email', 'password']), (req, res, next) => {
+    // Si pasa la validación, el router original manejará la lógica
+    next();
+});
+
 app.use('/usuarios', usuariosRouter);
 app.use('/recursos', recursosRouter);
 app.use('/reservas', reservasRouter);
