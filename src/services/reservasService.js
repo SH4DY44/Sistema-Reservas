@@ -142,6 +142,12 @@ class ReservasService {
 
     } catch (error) {
       await client.query('ROLLBACK');
+      
+      // [TEMA 4: CONSISTENCIA] Capturar error de constraint de exclusión o Deadlock
+      if (error.code === '23P01' || error.code === '40P01') {
+        throw { statusCode: 409, message: 'El recurso ya está ocupado en ese horario (Conflicto de concurrencia/BD)' };
+      }
+      
       throw error;
     } finally {
       client.release(); // Devolver cliente al pool
