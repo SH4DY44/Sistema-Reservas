@@ -5,13 +5,27 @@
 const db = require('../config/database');
 const { isNotEmpty, isPositiveNumber } = require('../utils/validators');
 
+const RemoteResourcesService = require('./remoteResourcesService');
+
 class RecursosService {
-  // Obtener todos los recursos
-  static async obtenerTodos() {
-    const result = await db.query(
-      'SELECT * FROM recursos ORDER BY id DESC'
-    );
-    return result.rows;
+  // Obtener todos los recursos (Local + Remoto de forma Transparente)
+  static async getAll() {
+    console.log('[RecursosService] Obteniendo inventario unificado...');
+
+    // Ejecución paralela: BD Local + API Remota
+    const [localResult, remoteResources] = await Promise.all([
+      db.query('SELECT * FROM recursos ORDER BY id ASC'),
+      RemoteResourcesService.getExternalResources().catch(err => {
+        console.error('Error obteniendo recursos remotos:', err);
+        return []; // Fallback: Si falla lo remoto, mostramos solo lo local (Tolerancia a fallos implícita)
+      })
+    ]);
+
+    const localResources = localResult.rows;
+
+    // Fusión de datos (Transparencia de Localización)
+    console.log(`[Transparency] Fusionando ${localResources.length} locales + ${remoteResources.length} remotos.`);
+    return [...localResources, ...remoteResources];
   }
 
   // Obtener recurso por ID
