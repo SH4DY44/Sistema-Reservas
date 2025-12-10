@@ -167,8 +167,8 @@ class ReservasService {
       // PASO 2: Servicio Externo (Notificación)
       // Si este paso falla, la BD ya tiene los datos, así que debemos DESHACER (Compensar)
       console.log('--- SAGA PASO 2: Enviando Notificación Externa ---');
-      // Usamos el email que viene del JOIN en 'crear'
-      await NotificationService.enviarConfirmacion(reservaCreada, reservaCreada.usuario_email);
+      // Usamos el wrapper con tolerancia a fallas
+      await NotificationService.enviarConReintento(reservaCreada, reservaCreada.usuario_email);
 
       return reservaCreada;
 
