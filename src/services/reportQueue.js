@@ -29,11 +29,11 @@ class ReportQueue {
       this.isProcessing = true;
       const job = this.jobs.shift();
   
-      console.log(`[AsyncQueue] 🔄 Procesando reporte en SEGUNDO PLANO (Job ID: ${Date.now()})...`);
+      console.log(`[AsyncQueue] Procesando reporte en SEGUNDO PLANO (Job ID: ${Date.now()})...`);
       
       // Simular tarea pesada (5 segundos)
       setTimeout(() => {
-        console.log(`[AsyncQueue] ✅ Reporte TERMINADO para usuario ${job.usuario_id}. (Se podría enviar por email/guardar en disco)`);
+        console.log(`[AsyncQueue] Reporte TERMINADO para usuario ${job.usuario_id}. (Se podría enviar por email/guardar en disco)`);
         
         // Seguir con el siguiente
         this.isProcessing = false;
