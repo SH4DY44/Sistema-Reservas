@@ -7,7 +7,7 @@ const { sendSuccess, sendError, sendNotFound } = require('../utils/responses');
 
 exports.getRecursos = async (req, res, next) => {
   try {
-    const recursos = await RecursosService.obtenerTodos();
+    const recursos = await RecursosService.getAll();
     sendSuccess(res, recursos, 'Recursos obtenidos exitosamente');
   } catch (error) {
     next(error);

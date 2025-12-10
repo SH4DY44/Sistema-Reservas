@@ -14,6 +14,7 @@ const validateRequiredFields = require('./middleware/validator');
 const usuariosRouter = require('./routes/usuarios');
 const recursosRouter = require('./routes/recursos');
 const reservasRouter = require('./routes/reservas');
+const reportesRouter = require('./routes/reportes');
 
 // Inicializar app
 const app = express();
@@ -50,6 +51,7 @@ app.post('/usuarios/login', validateRequiredFields(['email', 'password']), (req,
 app.use('/usuarios', usuariosRouter);
 app.use('/recursos', recursosRouter);
 app.use('/reservas', reservasRouter);
+app.use('/reportes', reportesRouter);
 
 // Ruta 404
 app.use((req, res) => {

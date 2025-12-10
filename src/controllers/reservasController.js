@@ -46,8 +46,10 @@ exports.getReservasPorRecurso = async (req, res, next) => {
 
 exports.createReserva = async (req, res, next) => {
   try {
-    const reserva = await ReservasService.crear(req.body);
-    sendSuccess(res, reserva, 'Reserva creada exitosamente', 201);
+    // [TEMA 5: TRANSACCIONES DISTRIBUIDAS]
+    // Usamos la orquestación SAGA en lugar de la creación simple
+    const reserva = await ReservasService.crearReservaConSaga(req.body);
+    sendSuccess(res, reserva, 'Reserva creada y notificada exitosamente', 201);
   } catch (error) {
     next(error);
   }
