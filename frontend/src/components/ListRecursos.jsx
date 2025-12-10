@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trash2, Edit, Plus, AlertCircle, CheckCircle, Lock, Armchair, Users } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import RecursosService from '../services/recursosService';
 import { DataTable } from './ui/DataTable';
 
 export default function ListRecursos() {
@@ -14,19 +15,18 @@ export default function ListRecursos() {
 
   const isAdmin = usuario?.rol === 'admin';
 
-  const fetchRecursos = () => {
+  const fetchRecursos = async () => {
     setLoading(true);
-    fetch('http://localhost:3000/recursos')
-      .then(res => res.json())
-      .then(data => {
-        const recursosData = data.data || data;
-        setRecursos(Array.isArray(recursosData) ? recursosData : []);
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching recursos:', err);
-        setLoading(false);
-      });
+    try {
+      const response = await RecursosService.getAll();
+      const recursosData = response.data || [];
+      setRecursos(Array.isArray(recursosData) ? recursosData : []);
+    } catch (err) {
+      console.error('Error fetching recursos:', err);
+      // Optional: set error message if visible
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -37,18 +37,13 @@ export default function ListRecursos() {
     if (!window.confirm('¿Seguro que deseas eliminar este espacio permanentemente?')) return;
 
     try {
-      const res = await fetch(`http://localhost:3000/recursos/${id}`, { method: 'DELETE' });
-      if (res.ok) {
-        setMensaje('Espacio eliminado del inventario');
-        setTipoMensaje('success');
-        fetchRecursos();
-        setTimeout(() => setMensaje(''), 3000);
-      } else {
-        setMensaje('Error al eliminar espacio');
-        setTipoMensaje('error');
-      }
-    } catch {
-      setMensaje('Error de conexión');
+      await RecursosService.delete(id);
+      setMensaje('Espacio eliminado del inventario');
+      setTipoMensaje('success');
+      fetchRecursos();
+      setTimeout(() => setMensaje(''), 3000);
+    } catch (err) {
+      setMensaje(err.message || 'Error al eliminar espacio');
       setTipoMensaje('error');
     }
   };
@@ -128,8 +123,8 @@ export default function ListRecursos() {
       {mensaje && (
         <div
           className={`flex items-center gap-2 p-4 rounded-xl border ${tipoMensaje === 'success'
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+            : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
             }`}
         >
           {tipoMensaje === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
