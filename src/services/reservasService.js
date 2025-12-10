@@ -8,6 +8,7 @@ const {
   isValidDate,
   isValidDateRange,
 } = require('../utils/validators');
+const NotificationService = require('./notificationService');
 
 class ReservasService {
   // Obtener todas las reservas
@@ -106,8 +107,7 @@ class ReservasService {
       const conflicto = await client.query(
         `SELECT id FROM reservas 
          WHERE recurso_id = $1
-         AND (fecha_inicio < $3 AND fecha_fin > $2)
-         AND estado != 'cancelada'`, // Ignoramos canceladas
+         AND (fecha_inicio < $3 AND fecha_fin > $2)`,
         [recurso_id, fecha_inicio, fecha_fin]
       );
 
@@ -127,7 +127,7 @@ class ReservasService {
 
       // Recuperar datos completos para devolver
       const result = await client.query(
-        `SELECT r.*, u.nombre AS usuario_nombre, rc.nombre AS recurso_nombre
+        `SELECT r.*, u.nombre AS usuario_nombre, u.email AS usuario_email, rc.nombre AS recurso_nombre
          FROM reservas r
          LEFT JOIN usuarios u ON r.usuario_id = u.id
          LEFT JOIN recursos rc ON r.recurso_id = rc.id
@@ -151,6 +151,44 @@ class ReservasService {
       throw error;
     } finally {
       client.release(); // Devolver cliente al pool
+    }
+  }
+
+  // Crear reserva usando Patrón SAGA (Transacción Distribuida)
+  static async crearReservaConSaga(datos) {
+    let reservaCreada = null;
+
+    try {
+      // PASO 1: Transacción Local (Base de Datos)
+      console.log('--- SAGA PASO 1: Creando Reserva en BD ---');
+      reservaCreada = await this.crear(datos);
+      console.log(`   Reserva creada con ID: ${reservaCreada.id}`);
+
+      // PASO 2: Servicio Externo (Notificación)
+      // Si este paso falla, la BD ya tiene los datos, así que debemos DESHACER (Compensar)
+      console.log('--- SAGA PASO 2: Enviando Notificación Externa ---');
+      // Usamos el email que viene del JOIN en 'crear'
+      await NotificationService.enviarConfirmacion(reservaCreada, reservaCreada.usuario_email);
+
+      return reservaCreada;
+
+    } catch (error) {
+      console.error('--- SAGA ERROR: Falló un paso de la transacción distribuida ---');
+      console.error(`   Motivo: ${error.message}`);
+
+      // LÓGICA DE COMPENSACIÓN (Rollback manual de pasos previos)
+      if (reservaCreada && reservaCreada.id) {
+        console.log('--- SAGA COMPENSACIÓN: Ejecutando Delete (Deshaciendo Paso 1) ---');
+        await this.eliminar(reservaCreada.id);
+        console.log('   Compensación exitosa: Reserva eliminada para mantener consistencia.');
+      }
+
+      // Propagamos el error al cliente
+      throw { 
+        statusCode: 500, 
+        message: 'La reserva no pudo completarse porque falló el servicio de notificaciones. Se ha revertido la operación.',
+        originalError: error.message 
+      };
     }
   }
 
