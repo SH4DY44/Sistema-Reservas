@@ -25,19 +25,19 @@ class RecursosService {
 
   // Crear recurso
   static async crear(datos) {
-    const { nombre, descripcion } = datos;
+    const { nombre, descripcion, cantidad_disponible } = datos;
 
     // Validar datos
     if (!isNotEmpty(nombre)) {
       throw { statusCode: 400, message: 'El nombre del recurso es requerido' };
     }
-    /*if (!isPositiveNumber(cantidad_disponible)) {
-      throw { statusCode: 400, message: 'La cantidad debe ser un número positivo' };
-    }*/
+    
+    // Default to 1 if not provided or invalid
+    const cantidad = isPositiveNumber(cantidad_disponible) ? parseInt(cantidad_disponible) : 1;
     
     const result = await db.query(
-      'INSERT INTO recursos (nombre, descripcion) VALUES ($1, $2) RETURNING *',
-      [nombre, descripcion || null]
+      'INSERT INTO recursos (nombre, descripcion, cantidad_disponible) VALUES ($1, $2, $3) RETURNING *',
+      [nombre, descripcion || null, cantidad]
     );
 
     return result.rows[0];
@@ -45,19 +45,15 @@ class RecursosService {
 
   // Actualizar recurso
   static async actualizar(id, datos) {
-    const { nombre, descripcion } = datos;
-
+    const { nombre, descripcion, cantidad_disponible } = datos;
 
     if (nombre && !isNotEmpty(nombre)) {
       throw { statusCode: 400, message: 'El nombre no puede estar vacío' };
     }
-    /*if (cantidad_disponible && !isPositiveNumber(cantidad_disponible)) {
-      throw { statusCode: 400, message: 'La cantidad debe ser un número positivo' };
-    }*/
 
     const result = await db.query(
-      'UPDATE recursos SET nombre = COALESCE($1, nombre), descripcion = COALESCE($2, descripcion) WHERE id = $3 RETURNING *',
-      [nombre || null, descripcion || null, id]
+      'UPDATE recursos SET nombre = COALESCE($1, nombre), descripcion = COALESCE($2, descripcion), cantidad_disponible = COALESCE($3, cantidad_disponible) WHERE id = $4 RETURNING *',
+      [nombre || null, descripcion || null, cantidad_disponible || null, id]
     );
 
     if (result.rows.length === 0) {

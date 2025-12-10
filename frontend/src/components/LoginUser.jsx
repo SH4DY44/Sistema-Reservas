@@ -46,44 +46,43 @@ export default function LoginUser() {
   };
 
   return (
-    <FormLayout title="Iniciar Sesión" backLink="/">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <FormLayout title="Iniciar Sesión">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Email</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Email Corporativo</label>
           <input
             type="email"
-            placeholder="tu@ejemplo.com"
+            placeholder="tu@nexus.com"
             value={email}
             onChange={e => setEmail(e.target.value)}
             required
-            className="form-input"
+            className="block w-full rounded-lg bg-brand-dark border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none transition-all"
           />
         </div>
 
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Contraseña</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Contraseña</label>
           <input
             type="password"
-            placeholder="Tu contraseña"
+            placeholder="••••••••"
             value={password}
             onChange={e => setPassword(e.target.value)}
             required
-            className="form-input"
+            className="block w-full rounded-lg bg-brand-dark border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none transition-all"
           />
         </div>
 
         {mensaje && (
           <div
-            className={`flex items-center gap-2 p-4 rounded-lg ${
-              tipoMensaje === 'success'
-                ? 'bg-green-100 text-green-700 border border-green-400'
-                : 'bg-red-100 text-red-700 border border-red-400'
-            }`}
+            className={`flex items-center gap-3 p-4 rounded-lg text-sm border ${tipoMensaje === 'success'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              }`}
           >
             {tipoMensaje === 'success' ? (
-              <CheckCircle size={20} />
+              <CheckCircle size={18} className="shrink-0" />
             ) : (
-              <AlertCircle size={20} />
+              <AlertCircle size={18} className="shrink-0" />
             )}
             {mensaje}
           </div>
@@ -92,29 +91,31 @@ export default function LoginUser() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:bg-gray-400"
+          className="w-full flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-600 text-white px-4 py-3 rounded-xl transition-all font-bold shadow-lg shadow-brand-blue/20 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-brand-blue/40"
         >
           {loading ? (
             <>
               <Loader size={20} className="animate-spin" />
-              Iniciando sesión...
+              Accediendo...
             </>
           ) : (
             <>
               <LogIn size={20} />
-              Iniciar Sesión
+              Entrar al Workspace
             </>
           )}
         </button>
 
-        <div className="text-center pt-4 border-t border-gray-300">
-          <p className="text-gray-600">¿No tienes cuenta?</p>
-          <Link
-            to="/registrar-usuario"
-            className="text-blue-600 hover:text-blue-700 font-semibold"
-          >
-            Registrate aquí
-          </Link>
+        <div className="text-center pt-2">
+          <p className="text-sm text-slate-500">
+            ¿No tienes cuenta?{' '}
+            <Link
+              to="/registrar-usuario"
+              className="text-brand-orange hover:text-orange-400 font-semibold transition-colors"
+            >
+              Solicitar acceso
+            </Link>
+          </p>
         </div>
       </form>
     </FormLayout>

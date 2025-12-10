@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import { AlertCircle, CheckCircle, Loader, Users } from 'lucide-react';
 import FormLayout from './FormLayout';
 
 export default function EditRecurso() {
   const { id } = useParams();
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
+  const [cantidadDisponible, setCantidadDisponible] = useState('1');
   const [mensaje, setMensaje] = useState('');
   const [tipoMensaje, setTipoMensaje] = useState('');
   const [loading, setLoading] = useState(false);
@@ -18,12 +19,12 @@ export default function EditRecurso() {
       try {
         const res = await fetch(`http://localhost:3000/recursos/${id}`);
         const data = await res.json();
-        if (data.data) {
-          setNombre(data.data.nombre || '');
-          setDescripcion(data.data.descripcion || '');
-        } else if (data.nombre) {
-          setNombre(data.nombre);
-          setDescripcion(data.descripcion);
+        const rec = data.data || data; // Handle wrapper if exists
+
+        if (rec) {
+          setNombre(rec.nombre || '');
+          setDescripcion(rec.descripcion || '');
+          setCantidadDisponible(rec.cantidad_disponible || '1');
         }
       } catch {
         setMensaje('Error al cargar datos');
@@ -32,7 +33,7 @@ export default function EditRecurso() {
         setLoadingInit(false);
       }
     };
-    
+
     fetchRecurso();
   }, [id]);
 
@@ -45,16 +46,20 @@ export default function EditRecurso() {
       const res = await fetch(`http://localhost:3000/recursos/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nombre, descripcion })
+        body: JSON.stringify({
+          nombre,
+          descripcion,
+          cantidad_disponible: parseInt(cantidadDisponible)
+        })
       });
       const data = await res.json();
 
       if (res.ok) {
-        setMensaje('Recurso actualizado exitosamente. Redirigiendo...');
+        setMensaje('Espacio actualizado exitosamente. Redirigiendo...');
         setTipoMensaje('success');
         setTimeout(() => navigate('/recursos'), 1500);
       } else {
-        setMensaje(data.message || 'Error al actualizar recurso');
+        setMensaje(data.message || 'Error al actualiza espacio');
         setTipoMensaje('error');
       }
     } catch {
@@ -67,53 +72,66 @@ export default function EditRecurso() {
 
   if (loadingInit) {
     return (
-      <FormLayout title="Editar Recurso" backLink="/recursos">
+      <FormLayout title="Editar Espacio" backLink="/recursos">
         <div className="flex justify-center py-8">
-          <Loader size={32} className="animate-spin text-green-600" />
+          <Loader size={32} className="animate-spin text-brand-blue" />
         </div>
       </FormLayout>
     );
   }
 
   return (
-    <FormLayout title="Editar Recurso" backLink="/recursos">
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <FormLayout title="Editar Espacio" backLink="/recursos">
+      <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Nombre del Recurso</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Nombre del Espacio</label>
           <input
             type="text"
-            placeholder="Ej: Sala de conferencias"
+            placeholder="Ej: Sala Plenaria"
             value={nombre}
             onChange={e => setNombre(e.target.value)}
             required
-            className="form-input"
+            className="block w-full rounded-lg bg-brand-dark border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none transition-all"
           />
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-300 mb-2">Capacidad (Pax)</label>
+            <div className="relative">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+              <input
+                type="number"
+                min="1"
+                placeholder="1"
+                value={cantidadDisponible}
+                onChange={e => setCantidadDisponible(e.target.value)}
+                required
+                className="block w-full pl-10 rounded-lg bg-brand-dark border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-brand-orange focus:ring-2 focus:ring-brand-orange/20 focus:outline-none transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
         <div>
-          <label className="block text-gray-700 font-semibold mb-2">Descripción</label>
+          <label className="block text-sm font-medium text-slate-300 mb-2">Descripción / Equipamiento</label>
           <textarea
-            placeholder="Descripción detallada del recurso"
+            placeholder="Descripción detallada del espacio"
             value={descripcion}
             onChange={e => setDescripcion(e.target.value)}
             rows="4"
-            className="form-input resize-none"
+            className="block w-full rounded-lg bg-brand-dark border border-slate-700 px-4 py-2.5 text-white placeholder:text-slate-600 focus:border-brand-blue focus:ring-2 focus:ring-brand-blue/20 focus:outline-none transition-all resize-none"
           />
         </div>
 
         {mensaje && (
           <div
-            className={`flex items-center gap-2 p-4 rounded-lg ${
-              tipoMensaje === 'success'
-                ? 'bg-green-100 text-green-700 border border-green-400'
-                : 'bg-red-100 text-red-700 border border-red-400'
-            }`}
+            className={`flex items-center gap-3 p-4 rounded-lg text-sm border ${tipoMensaje === 'success'
+                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+              }`}
           >
-            {tipoMensaje === 'success' ? (
-              <CheckCircle size={20} />
-            ) : (
-              <AlertCircle size={20} />
-            )}
+            {tipoMensaje === 'success' ? <CheckCircle size={18} /> : <AlertCircle size={18} />}
             {mensaje}
           </div>
         )}
@@ -121,7 +139,7 @@ export default function EditRecurso() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:bg-gray-400"
+          className="w-full flex items-center justify-center gap-2 bg-brand-blue hover:bg-blue-600 text-white px-4 py-3 rounded-xl transition-all font-bold shadow-lg shadow-brand-blue/20 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? (
             <>

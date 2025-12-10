@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trash2, Edit, Plus, AlertCircle, CheckCircle, Lock } from 'lucide-react';
+import { Trash2, Edit, Plus, AlertCircle, CheckCircle, Lock, Calendar, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { DataTable } from './ui/DataTable';
 
 export default function ListReservas() {
   const [reservas, setReservas] = useState([]);
@@ -31,12 +32,12 @@ export default function ListReservas() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Seguro que deseas eliminar esta reserva?')) return;
-    
+    if (!window.confirm('¿Seguro que deseas cancelar esta reserva de la agenda?')) return;
+
     try {
       const res = await fetch(`http://localhost:3000/reservas/${id}`, { method: 'DELETE' });
       if (res.ok) {
-        setMensaje('Reserva eliminada exitosamente');
+        setMensaje('Reserva eliminada de la agenda');
         setTipoMensaje('success');
         fetchReservas();
         setTimeout(() => setMensaje(''), 3000);
@@ -50,46 +51,113 @@ export default function ListReservas() {
     }
   };
 
-  const handleEdit = (id) => {
-    navigate(`/editar-reserva/${id}`);
+  const formatDate = (dateString) => {
+    if (!dateString) return '-';
+    // Format: "15 Oct, 2025"
+    return new Date(dateString).toLocaleDateString('es-ES', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+  const formatTime = (dateString) => {
+    if (!dateString) return '-';
+    // Format: "14:30"
+    return new Date(dateString).toLocaleTimeString('es-ES', {
       hour: '2-digit',
       minute: '2-digit'
     });
   };
 
+  const columns = [
+    { key: 'usuario_nombre', header: 'Miembro' },
+    { key: 'recurso_nombre', header: 'Espacio / Equipo' },
+    {
+      key: 'fecha_inicio',
+      header: 'Inicio',
+      render: (item) => (
+        <div className="flex flex-col text-xs">
+          <span className="flex items-center gap-1 text-slate-300 font-medium">
+            <Calendar size={12} className="text-brand-blue" />
+            {formatDate(item.fecha_inicio)}
+          </span>
+          <span className="flex items-center gap-1 text-slate-500 pl-1 mt-0.5">
+            <Clock size={12} />
+            {formatTime(item.fecha_inicio)}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'fecha_fin',
+      header: 'Fin',
+      render: (item) => (
+        <div className="flex flex-col text-xs">
+          <span className="flex items-center gap-1 text-slate-300 font-medium">
+            <Calendar size={12} className="text-brand-orange" />
+            {formatDate(item.fecha_fin)}
+          </span>
+          <span className="flex items-center gap-1 text-slate-500 pl-1 mt-0.5">
+            <Clock size={12} />
+            {formatTime(item.fecha_fin)}
+          </span>
+        </div>
+      )
+    },
+    {
+      key: 'actions',
+      header: 'Acciones',
+      render: (item) => (
+        <div className="flex gap-2 justify-end">
+          {usuario && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); navigate(`/editar-reserva/${item.id}`) }}
+                className="p-1.5 text-blue-400 hover:bg-brand-blue/10 rounded-lg transition"
+                title="Modificar Agenda"
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); handleDelete(item.id) }}
+                className="p-1.5 text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+                title="Cancelar Reserva"
+              >
+                <Trash2 size={16} />
+              </button>
+            </>
+          )}
+        </div>
+      )
+    }
+  ];
+
   return (
-    <div className="w-full">
-      {/* Header */}
-      <div className="flex justify-between items-center mb-6">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reservas</h1>
-          <p className="text-gray-600 mt-1">Gestiona todas las reservas del sistema</p>
+          <h1 className="text-2xl font-bold text-slate-100">Agenda Central</h1>
+          <p className="text-slate-400">Visualiza y gestiona el calendario de uso de espacios.</p>
         </div>
         {usuario && (
           <button
             onClick={() => navigate('/registrar-reserva')}
-            className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            className="flex items-center gap-2 bg-brand-blue text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors shadow-lg shadow-brand-blue/20 font-bold text-sm tracking-wide"
           >
-            <Plus size={20} />
-            Nueva Reserva
+            <Plus size={18} />
+            Agendar Espacio
           </button>
         )}
       </div>
 
-      {/* Access Limited Warning */}
+      {/* Access Warning */}
       {!usuario && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6 flex items-center gap-3">
-          <Lock size={20} className="text-amber-600" />
+        <div className="bg-amber-900/20 border border-amber-500/30 rounded-lg p-4 flex items-center gap-3">
+          <Lock size={20} className="text-amber-500" />
           <div>
-            <p className="text-amber-900 font-medium">Acceso limitado</p>
-            <p className="text-amber-800 text-sm">Inicia sesión para agregar, editar o eliminar reservas</p>
+            <p className="text-amber-200 font-medium">Modo Lectura</p>
+            <p className="text-amber-400/80 text-sm">Necesitas ser miembro para agendar espacios.</p>
           </div>
         </div>
       )}
@@ -97,76 +165,22 @@ export default function ListReservas() {
       {/* Message */}
       {mensaje && (
         <div
-          className={`flex items-center gap-2 p-4 rounded-lg mb-6 ${
-            tipoMensaje === 'success'
-              ? 'bg-green-100 text-green-700 border border-green-300'
-              : 'bg-red-100 text-red-700 border border-red-300'
-          }`}
+          className={`flex items-center gap-2 p-4 rounded-xl border ${tipoMensaje === 'success'
+              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+              : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            }`}
         >
-          {tipoMensaje === 'success' ? (
-            <CheckCircle size={20} />
-          ) : (
-            <AlertCircle size={20} />
-          )}
+          {tipoMensaje === 'success' ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
           {mensaje}
         </div>
       )}
 
-      {/* Loading State */}
-      {loading ? (
-        <div className="flex justify-center items-center h-64 bg-white rounded-lg border border-gray-200">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
-      ) : reservas.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <p className="text-gray-600 text-lg font-medium">No hay reservas registradas</p>
-          <p className="text-gray-500 mt-1">Crea la primera reserva para comenzar</p>
-        </div>
-      ) : (
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Usuario</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Recurso</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fecha Inicio</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-900">Fecha Fin</th>
-                {usuario && <th className="px-6 py-4 text-right text-sm font-semibold text-gray-900">Acciones</th>}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {reservas.map((res) => (
-                <tr key={res.id} className="hover:bg-gray-50 transition">
-                  <td className="px-6 py-4 text-sm text-gray-900 font-medium">{res.usuario_nombre || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{res.recurso_nombre || 'N/A'}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(res.fecha_inicio)}</td>
-                  <td className="px-6 py-4 text-sm text-gray-600">{formatDate(res.fecha_fin)}</td>
-                  {usuario && (
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleEdit(res.id)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition"
-                          title="Editar"
-                        >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(res.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                          title="Eliminar"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable
+        columns={columns}
+        data={reservas}
+        isLoading={loading}
+        searchPlaceholder="Buscar en la agenda por nombre o espacio..."
+      />
     </div>
   );
 }
