@@ -1,5 +1,5 @@
 require('dotenv').config();
-const pool = require('../db');
+const pool = require('../src/db');
 
 async function addConsistencyConstraints() {
   console.log('--- APLICANDO CONSTRAINTS DE CONSISTENCIA DE DATOS ---\n');
@@ -20,12 +20,15 @@ async function addConsistencyConstraints() {
     // 3. Agregar Constraint CHECK (Validación simple)
     console.log('3. Agregando CHECK (fecha_fin > fecha_inicio)...');
     try {
+        await client.query('SAVEPOINT check_constraint');
         await client.query(`
             ALTER TABLE reservas 
             ADD CONSTRAINT check_fechas_logicas 
             CHECK (fecha_fin > fecha_inicio);
         `);
+        await client.query('RELEASE SAVEPOINT check_constraint');
     } catch (e) {
+        await client.query('ROLLBACK TO SAVEPOINT check_constraint');
         console.log('   (Constraint check_fechas_logicas ya existía o falló)');
     }
 
