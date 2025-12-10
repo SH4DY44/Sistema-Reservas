@@ -29,7 +29,21 @@ exports.getUsuario = async (req, res, next) => {
 
 exports.createUsuario = async (req, res, next) => {
   try {
-    const usuario = await UsuariosService.crear(req.body);
+    const { adminCode, ...datosUsuario } = req.body;
+    
+    // Check for secret admin code (Hardcoded for demo: 'NEXUS_ADMIN_2025')
+    const code = adminCode ? adminCode.trim() : '';
+    console.log('Intento de registro con Codigo Admin:', code); // Debug log
+
+    const isAdmin = code === 'NEXUS_ADMIN_2025';
+    
+    const nuevoUsuario = {
+        ...datosUsuario,
+        rol: isAdmin ? 'admin' : 'miembro'
+    };
+
+    const usuario = await UsuariosService.crear(nuevoUsuario);
+    
     sendSuccess(res, usuario, 'Usuario creado exitosamente', 201);
   } catch (error) {
     next(error);
